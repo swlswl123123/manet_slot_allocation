@@ -1,10 +1,14 @@
-function [table, color_table, num_allocate_fnl] = allocate(src, dst, table, color_table, topo)
+function [table, color_table, num_allocate_fnl] = allocate(src, dst, table, color_table, topo, type)
 %allocate - Description
 %
 % Syntax: [table] = allocate(src, dst, table, color_table, topo)
 %
 % Long description
-num_allocate = min(ceil(color_table(src, 2) / color_table(src, 1)), ceil(color_table(dst, 2) / color_table(dst, 1)));
+if type == 0
+    num_allocate = 2;
+else
+    num_allocate = min(ceil(color_table(src, 2) / color_table(src, 1)), ceil(color_table(dst, 2) / color_table(dst, 1)));
+end
 % 计算两跳邻居
 two_hop_src = [];
 two_hop_dst = [];
@@ -58,6 +62,11 @@ end
 
 slot_free = sort(slot_free);
 % 按优先级分配时隙
+% prio_idx = length(find(slot_free < 0));
+% slot_free_sub = slot_free(prio_idx+1:end);
+% % 打乱顺序
+% slot_free_sub = slot_free_sub(randperm(length(slot_free_sub)));
+% slot_free = [slot_free(1:prio_idx), slot_free_sub];
 num_allocate_fnl = min(length(slot_free), num_allocate);
 for i = 1:num_allocate_fnl
     index = mod(slot_free(i)-1, M)+1;
@@ -66,10 +75,19 @@ for i = 1:num_allocate_fnl
 end
     
 % 修改color_table
-color_table(src, 1) = color_table(src, 1) - 1;
-color_table(src, 2) = color_table(src, 2) - num_allocate_fnl;
+% if type == 1
+%     color_table(src, 1) = color_table(src, 1) - 1;
+%     color_table(src, 2) = color_table(src, 2) - num_allocate_fnl;
+% end
 
-color_table(dst, 1) = color_table(dst, 1) - 1;
-color_table(dst, 2) = color_table(dst, 2) - num_allocate_fnl;
+% color_table(dst, 1) = color_table(dst, 1) - 1;
+% color_table(dst, 2) = color_table(dst, 2) - num_allocate_fnl;
+
+if type == 0
+    color_table(src, 2) = color_table(src, 2) - num_allocate_fnl;   
+else
+    color_table(dst, 1) = color_table(dst, 1) - 1;
+    color_table(dst, 2) = color_table(dst, 2) - num_allocate_fnl;    
+end
 
 end

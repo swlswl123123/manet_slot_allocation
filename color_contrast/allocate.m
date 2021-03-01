@@ -1,10 +1,14 @@
-function [table, color_table, num_allocate_fnl] = allocate(src, dst, table, color_table, topo)
+function [table, color_table, num_allocate_fnl] = allocate(src, dst, table, color_table, topo, type)
 %allocate - Description
 %
 % Syntax: [table] = allocate(src, dst, table, color_table, topo)
 %
 % Long description
-num_allocate = min(ceil(color_table(src, 2) / color_table(src, 1)), ceil(color_table(dst, 2) / color_table(dst, 1)));
+if type == 0
+    num_allocate = 2;
+else
+    num_allocate = min(ceil(color_table(src, 2) / color_table(src, 1)), ceil(color_table(dst, 2) / color_table(dst, 1)));
+end
 % 计算两跳邻居
 two_hop_src = [];
 two_hop_dst = [];
@@ -69,7 +73,9 @@ end
     
 % 修改color_table
 % color_table(src, 1) = color_table(src, 1) - 1;
-% color_table(src, 2) = color_table(src, 2) - num_allocate_fnl;
+if type == 0
+    color_table(src, 2) = color_table(src, 2) - num_allocate_fnl;    
+end
 
 % color_table(dst, 1) = color_table(dst, 1) - 1;
 % color_table(dst, 2) = color_table(dst, 2) - num_allocate_fnl;

@@ -11,7 +11,7 @@ clear all; close all;
 % 参数设置
 % N = 16; % 节点数量
 M = 50; % 时隙数量
-Ne = 100; % 试验次数
+Ne = 10; % 试验次数
 index_N = 1;
 
 for N = 5:35
@@ -122,6 +122,17 @@ for i = 1:N
     end
 end
 
+% 先分配基本时隙
+mark = zeros(1, length(link_t));
+
+while sum(mark) < length(link_t)
+    index_link = find(mark == 0);
+    sel = randi([1, length(index_link)]);
+    mark(index_link(sel)) = 1;
+    [table, color_table, num_link] = allocate(link_t{index_link(sel)}(1), link_t{index_link(sel)}(2), table, color_table, topo, 0);
+end
+
+% 分配扩展时隙
 mark = zeros(1, length(link_t));
 num_link_all = zeros(size(mark));
 num_link_index = 1;
@@ -130,8 +141,8 @@ while sum(mark) < length(link_t)
     index_link = find(mark == 0);
     sel = randi([1, length(index_link)]);
     mark(index_link(sel)) = 1;
-    [table, color_table, num_link] = allocate(link_t{index_link(sel)}(1), link_t{index_link(sel)}(2), table, color_table, topo);
-    num_link_all(num_link_index) = num_link;
+    [table, color_table, num_link] = allocate(link_t{index_link(sel)}(1), link_t{index_link(sel)}(2), table, color_table, topo, 1);
+    num_link_all(num_link_index) = num_link+2;
     num_link_index = num_link_index + 1;
 end
 
@@ -160,5 +171,3 @@ plot(5:35, throughput_var_rec)
 
 save('advanced_throughput.mat', 'throughput_all_rec');
 save('advanced_throughput_var.mat', 'throughput_var_rec');
-
-% [1.85600000000000,2.22000000000000,2.57400000000000,3.04200000000000,3.52600000000000,3.80800000000000,4.38200000000000,4.86800000000000,5.23000000000000,5.69200000000000,6.23800000000000,6.77400000000000,7.29000000000000,7.79000000000000,8.12600000000000,8.67400000000000,8.97400000000000,9.74400000000000,10.1100000000000,10.4960000000000,10.9600000000000,11.4800000000000,12.0480000000000,12.4620000000000,13.0160000000000,13.5540000000000,14.0480000000000,14.4380000000000,14.9020000000000,15.3660000000000,15.9160000000000]

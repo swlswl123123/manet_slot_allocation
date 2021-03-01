@@ -1,4 +1,4 @@
-function [table, color_table, num_allocate_fnl] = allocate(src, dst, table, num_allocate)
+function [table, color_table, num_allocate_fnl] = allocate_random(src, dst, table, num_allocate)
     %allocate - Description
     %
     % Syntax: [table] = allocate(src, dst, table, color_table, topo)

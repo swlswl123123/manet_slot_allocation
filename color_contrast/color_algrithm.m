@@ -9,7 +9,7 @@ clear all; close all;
 % 参数设置
 % N = 16; % 节点数量
 M = 50; % 时隙数量
-Ne = 100; % 试验次数
+Ne = 10; % 试验次数
 index_N = 1;
 
 for N = 5:35
@@ -119,6 +119,17 @@ for i = 1:N
     end
 end
 
+% 先分配基本时隙
+mark = zeros(1, length(link_t));
+
+while sum(mark) < length(link_t)
+    index_link = find(mark == 0);
+    sel = randi([1, length(index_link)]);
+    mark(index_link(sel)) = 1;
+    [table, color_table, num_link] = allocate(link_t{index_link(sel)}(1), link_t{index_link(sel)}(2), table, color_table, topo, 0);
+end
+
+% 分配扩展时隙
 mark = zeros(1, length(link_t));
 num_link_all = zeros(size(mark));
 num_link_index = 1;
@@ -127,8 +138,8 @@ while sum(mark) < length(link_t)
     index_link = find(mark == 0);
     sel = randi([1, length(index_link)]);
     mark(index_link(sel)) = 1;
-    [table, color_table, num_link] = allocate(link_t{index_link(sel)}(1), link_t{index_link(sel)}(2), table, color_table, topo);
-    num_link_all(num_link_index) = num_link;
+    [table, color_table, num_link] = allocate(link_t{index_link(sel)}(1), link_t{index_link(sel)}(2), table, color_table, topo, 1);
+    num_link_all(num_link_index) = num_link+2;
     num_link_index = num_link_index + 1;
 end
 
