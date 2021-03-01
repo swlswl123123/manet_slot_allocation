@@ -1,11 +1,11 @@
-function [advanced_trans, advanced_delay] = data_trans_advanced_fix(N, M, R, t_last, topo)
+function [advanced_trans, advanced_delay] = data_trans_advanced(N, M, R, t_last, topo)
 % 1. 按链路与时间均匀生成数据包
 % 2. 计算转发表，原始列表发送/接收交替
 % 3. 每个节点维护传输邻居节点个数的传输队列cell([src, dst, pkid])，
 % 4. 每一帧开始时按负载量决定实际使用的时隙数目，发送方申请（轮流抢占，其余不超过原始列表），随机链路，轮流两节点优先级
 % 5. 按时间片遍历，传送负载
 % 参数设置
-% N = 16; % 节点数量
+% N = 5; % 节点数量
 % M = 50; % 时隙数量
 
 table = zeros(N, M); % 时隙分配列表
@@ -115,17 +115,6 @@ while sum(mark) < length(link_t)
     [table, color_table, ~] = allocate_advanced(link_t{index_link(sel)}(2), link_t{index_link(sel)}(1), table, color_table, topo, -1);
 end
 
-% 分配扩展时隙
-mark = zeros(1, length(link_t));
-while sum(mark) < length(link_t)
-    index_link = find(mark == 0);
-    sel = randi([1, length(index_link)]);
-    mark(index_link(sel)) = 1;
-    num_allocate = min(ceil(color_table(link_t{index_link(sel)}(1), 2) / color_table(link_t{index_link(sel)}(1), 1)), ceil(color_table(link_t{index_link(sel)}(2), 2) / color_table(link_t{index_link(sel)}(2), 1)));
-    [table, ~, ~] = allocate_advanced(link_t{index_link(sel)}(1), link_t{index_link(sel)}(2), table, color_table, topo, floor(num_allocate/2));
-    [table, color_table, ~] = allocate_advanced(link_t{index_link(sel)}(2), link_t{index_link(sel)}(1), table, color_table, topo, floor(num_allocate/2));
-end
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %               计算路由表
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -154,7 +143,7 @@ end
 pk_rate = 10;
 
 % t_last = 10;
-% R = 2000;
+% R = 1000;
 Np = R*N*t_last; % 包的数量
 
 L = npermutek(1:N,2); % 所有链路
@@ -181,34 +170,54 @@ color_table_orign = color_table;
 % 每个时隙为1ms，一帧为50ms
 cur_time = 0;
 flag = 1;
-while cur_time < t_last*1.5
+while cur_time < t_last*2
     % 每帧开始时刻 
     % 计算实际需求的时隙
-    % if frame_cnt > N
-    %     frame_cnt = 1;
-    % end
-    % slot_need_table = zeros(N, N);
-    % table = table_origin;
-    % color_table = color_table_orign;
-    % ext_link = [];
-    % for i = 1:N
-    %     slot_need_ext = 0;
-    %     slot_ext_id = 0;
-    %     for j = 1:N
-    %         if topo(i, j)
-    %             slot_need_table(i, j) = ceil(size(txQ{i, j}, 1) / pk_rate);
-    %         end
-    %     end
-    %     slot_need_ext = max(slot_need_table(i, :)) - ceil(color_table(i, 2) / color_table(i, 1));
-    %     [~, slot_ext_id] = max(slot_need_table(i, :));
-    %     % 轮流抢占
-    %     if frame_cnt == i && slot_need_ext ~= 0
-    %         ext_link = [i, slot_ext_id];
-    %     end
-    % end
+    if frame_cnt > N
+        frame_cnt = 1;
+    end
+    slot_need_table = zeros(N, N);
+    table = table_origin;
+    color_table = color_table_orign;
+    ext_link = [];
+    for i = 1:N
+        slot_need_ext = 0;
+        slot_ext_id = 0;
+        for j = 1:N
+            if topo(i, j)
+                slot_need_table(i, j) = ceil(size(txQ{i, j}, 1) / pk_rate);
+            end
+        end
+        for j = 1:N
+            if slot_need_table(i, j) ~= 0
+                slot_need_table(i, j) = ceil(slot_need_table(i, j) / sum(slot_need_table(i, :)) * color_table(i, 2));
+            end
+        end
+        slot_need_ext = max(slot_need_table(i, :)) - ceil(color_table(i, 2) / color_table(i, 1));
+        [~, slot_ext_id] = max(slot_need_table(i, :));
+        % 轮流抢占
+        if frame_cnt == i && slot_need_ext ~= 0
+            ext_link = [i, slot_ext_id];
+        end
+    end
 
-    % % 分配扩展时隙
-    % mark = zeros(1, length(link_t));
+    for i = 1:N
+        for j = i+1:N
+            if topo(i, j)
+                constrain_num = min(ceil(color_table(i, 2) / color_table(i, 1)), ceil(color_table(j, 2) / color_table(j, 1)));
+                if flag
+                    num = min(slot_need_table(i, j), constrain_num);
+                    [table, color_table, ~] = allocate_advanced(i, j, table, color_table, topo, num);
+                else
+                    num = min(slot_need_table(j, i), constrain_num);
+                    [table, color_table, ~] = allocate_advanced(j, i, table, color_table, topo, num);
+                end
+            end
+        end
+    end
+
+    % 分配扩展时隙
+    mark = zeros(1, length(link_t));
     % while sum(mark) < length(link_t)
     %     index_link = find(mark == 0);
     %     sel = randi([1, length(index_link)]);
@@ -221,15 +230,16 @@ while cur_time < t_last*1.5
     %         [table, color_table, ~] = allocate_advanced(ext_link(1), ext_link(2), table, color_table, topo, num);
     %         continue;
     %     end
+    %     constrain_num = min(ceil(color_table(ext_slot_src, 2) / color_table(ext_slot_src, 1)), ceil(color_table(ext_slot_dst, 2) / color_table(ext_slot_dst, 1)));
     %     if flag % src主导
-    %         num = min(slot_need_table(ext_slot_src, ext_slot_dst), ceil(color_table(ext_slot_src, 2) / color_table(ext_slot_src, 1)));
+    %         num = min(slot_need_table(ext_slot_src, ext_slot_dst), constrain_num);
     %         [table, color_table, ~] = allocate_advanced(ext_slot_src, ext_slot_dst, table, color_table, topo, num);
     %     else    % dst主导
-    %         num = min(slot_need_table(ext_slot_dst, ext_slot_src), ceil(color_table(ext_slot_dst, 2) / color_table(ext_slot_dst, 1)));
+    %         num = min(slot_need_table(ext_slot_dst, ext_slot_src), constrain_num);
     %         [table, color_table, ~] = allocate_advanced(ext_slot_dst, ext_slot_src, table, color_table, topo, num);
     %     end
     % end
-    % flag = 1 - flag;
+    flag = 1 - flag;
     for i = 1:M
         % 放入队列中
         pk_idx = find(send_t >= cur_time & send_t < cur_time + 0.01);

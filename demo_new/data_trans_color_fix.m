@@ -137,7 +137,7 @@ for src_idx = 1:N
     [~,path,~] = graphshortestpath(topo_s, src_idx);
     pred = zeros(1, N);
     for i = 1:N
-        if i == src_idx
+        if i == src_idx || length(path{i}) < 2
             continue;
         end
         pred(i) = path{i}(2);
@@ -293,15 +293,15 @@ while cur_time < t_last*1.5
 end
 
 delay = recv_t - send_t;
-figure
-plot(time(1:t_last/0.01), throughput(2:t_last/0.01+1))
-throughput(end)
+% figure
+% plot(time(1:t_last/0.01), throughput(2:t_last/0.01+1))
+% throughput(end)
 
 advanced_trans = throughput(2:t_last/0.01+1);
 advanced_delay = delay(delay > 0);
-mean(advanced_delay)
-save('advanced_trans.mat', 'advanced_trans');
-save('advanced_delay.mat', 'advanced_delay');
+% mean(advanced_delay)
+% save('advanced_trans.mat', 'advanced_trans');
+% save('advanced_delay.mat', 'advanced_delay');
 
 % figure
 % plot(pk_send)
