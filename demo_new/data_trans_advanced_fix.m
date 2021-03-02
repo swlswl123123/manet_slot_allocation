@@ -298,6 +298,7 @@ delay = recv_t - send_t;
 % throughput(end)
 
 advanced_trans = throughput(2:t_last/0.01+1);
+% length(delay(delay > 0)) / length(delay)
 advanced_delay = delay(delay > 0);
 % save('advanced_trans.mat', 'advanced_trans');
 % save('advanced_delay.mat', 'advanced_delay');

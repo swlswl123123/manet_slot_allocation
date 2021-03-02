@@ -137,7 +137,7 @@ for src_idx = 1:N
     [~,path,~] = graphshortestpath(topo_s, src_idx);
     pred = zeros(1, N);
     for i = 1:N
-        if i == src_idx || length(path{i}) < 2
+        if i == src_idx
             continue;
         end
         pred(i) = path{i}(2);

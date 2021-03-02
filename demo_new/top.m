@@ -1,5 +1,9 @@
 clear all; close all;
 % rng(0)
+% 评价
+% 超过某一时间认为loss，计算比较loss概率
+% 如何找到极限吞吐量
+% color为simplied的方法
 
 throughput_advanced_rec = [];
 throughput_color_rec = [];
@@ -9,9 +13,9 @@ delay_color_rec = [];
 delay_random_rec = [];
 
 M = 50;
-R = 1000;
+R = 100;
 t_last = 5;
-Ne = 10;
+Ne = 1;
 
 for N = 16
     throughput_advanced = 0;
@@ -26,8 +30,10 @@ for N = 16
             topo_tmp = randi([0,1], [N,N]);
             topo = topo_tmp + topo_tmp';
             topo(topo ~= 1) = 0;
-            judge_tmp = sum(topo, 2);
-            if isempty(find(judge_tmp == 0, 1))
+            [p,q,v]=find(topo);
+            topo_s=sparse(p,q,v,N,N);
+            [dist,~,~] = graphshortestpath(topo_s, 1);
+            if isempty(find(dist == inf, 1))
                 break;
             end
         end
@@ -59,7 +65,7 @@ for N = 16
     throughput_color_rec = [throughput_color_rec, throughput_color/Ne];
     throughput_random_rec = [throughput_random_rec, throughput_random/Ne];
     delay_advanced_rec = [delay_advanced_rec, delay_advanced/Ne];
-    delay_color_rec = [delay_color_rec, throughput_color/Ne];
+    delay_color_rec = [delay_color_rec, delay_color/Ne];
     delay_random_rec = [delay_random_rec, delay_random/Ne];
 end
 
